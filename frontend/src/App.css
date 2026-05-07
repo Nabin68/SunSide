@@ -1,0 +1,17 @@
+/* SunSide Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
+
+.sun-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}

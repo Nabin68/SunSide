@@ -1,0 +1,41 @@
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm
+.eslintcache
+
+# Python
+venv/
+.venv/
+env/
+.env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment Variables
+.env
+.env.production
+.env.development
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project Specific
+frontend/node_modules/
+frontend/dist/
+backend/venv/
+backend/__pycache__/
+backend/.env
