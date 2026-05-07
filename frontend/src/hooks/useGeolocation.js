@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { reverseGeocode } from '../services/api';
 
 export const useGeolocation = () => {
@@ -11,7 +11,9 @@ export const useGeolocation = () => {
     denied: false,
   });
 
-  useEffect(() => {
+  const fetchLocation = useCallback(() => {
+    setLocation(prev => ({ ...prev, loading: true, error: null }));
+    
     if (!navigator.geolocation) {
       setLocation(prev => ({ ...prev, loading: false, error: 'Geolocation not supported', denied: true }));
       return;
@@ -48,7 +50,6 @@ export const useGeolocation = () => {
         }
       },
       (err) => {
-        // err.code 1 is PERMISSION_DENIED
         setLocation(prev => ({ 
           ...prev, 
           loading: false, 
@@ -60,5 +61,9 @@ export const useGeolocation = () => {
     );
   }, []);
 
-  return location;
+  useEffect(() => {
+    fetchLocation();
+  }, [fetchLocation]);
+
+  return { ...location, refresh: fetchLocation };
 };

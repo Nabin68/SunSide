@@ -1,96 +1,125 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { COLORS } from '../utils/theme';
 
-const RouteCard = ({ route, isBest, originAddress, destinationName }) => {
+const RouteCard = ({ route, isBest, isSelected, originName, destinationName, onClick }) => {
   const [copied, setCopied] = useState(false);
 
   const formatDuration = (seconds) => {
-    const mins = Math.round(seconds / 60);
-    if (mins < 60) return `${mins} min`;
-    const hrs = Math.floor(mins / 60);
-    const remMins = mins % 60;
-    return `${hrs}h ${remMins}m`;
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hrs === 0) return `${mins} min`;
+    return `${hrs}h ${mins}m`;
   };
 
   const formatDistance = (meters) => {
-    if (meters < 1000) return `${Math.round(meters)}m`;
-    return `${(meters / 1000).toFixed(1)}km`;
+    return (meters / 1000).toFixed(1) + ' km';
   };
 
-  const handleShare = () => {
-    const text = `Traveling to ${destinationName}? Sit on the ${route.recommended_side} side! 🌤️ via SunSide`;
+  const formatTime = (isoString) => {
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleShare = (e) => {
+    e.stopPropagation();
+    const text = `Traveling from ${originName} to ${destinationName}? Sit on the ${route.recommended_side} side (Route ${route.route_index + 1})! 🌤️ via SunSide`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Ensure minimum sliver for visibility
+  const leftW = Math.max(route.left_percent, route.right_percent > 95 ? 4 : 0);
+  const rightW = Math.max(route.right_percent, route.left_percent > 95 ? 4 : 0);
+
   return (
-    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-orange-50 transition-all duration-500 ease-out animate-in slide-in-from-bottom-10">
+    <div 
+      onClick={onClick}
+      className={`relative bg-white rounded-3xl shadow-lg p-6 pt-8 w-full cursor-pointer transition-all duration-300 border-2 ${
+        isSelected ? 'border-orange-500 scale-[1.02] ring-4 ring-orange-50' : (isBest ? 'border-orange-200' : 'border-gray-100 hover:border-gray-200')
+      }`}
+    >
       {isBest && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 border-2 border-white">
-          <span>👑</span> Best Choice
+        <div className="absolute -top-3 left-6 bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 border-2 border-white">
+          🏆 Best Comfort
         </div>
       )}
 
-      <div className="flex justify-between items-start mb-4 mt-2">
+      <div className="flex justify-between items-start mb-2">
         <div>
-          <h3 className="text-xl font-bold text-gray-800">
-            Route {route.route_index + 1}
-          </h3>
-          <p className="text-sm text-gray-500 font-medium">
-            {formatDuration(route.duration_seconds)} • {formatDistance(route.distance_meters)}
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-black text-gray-800 tracking-tight">
+              Route {route.route_index + 1}
+            </h3>
+            <span className="text-xs font-bold text-gray-400">
+               · {formatDuration(route.duration_seconds)}
+            </span>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">
+            {route.sun_period.replace(' ', ' · ')} · {formatDistance(route.distance_meters)}
           </p>
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase ${
-          route.recommended_side === 'LEFT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        <div className={`px-4 py-1.5 rounded-2xl text-[10px] font-black tracking-wider uppercase border-2 ${
+          route.recommended_side === 'LEFT' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-blue-50 text-blue-600 border-blue-100'
         }`}>
-          Sit on {route.recommended_side}
+          Recommend {route.recommended_side}
         </div>
       </div>
+      
+      <p className="text-[9px] text-gray-400 font-bold mb-4">Est. by road speed · actual may vary</p>
 
       <div className="space-y-4">
         <div>
-          <div className="flex justify-between text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">
-            <span>Left Side</span>
-            <span>Right Side</span>
-          </div>
-          <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden flex">
+          <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden flex shadow-inner">
             <div 
-              className="h-full bg-orange-400 transition-all duration-1000 ease-out" 
-              style={{ width: `${route.left_percent}%` }}
+              className="h-full bg-[#F5A623] transition-all duration-1000 ease-out" 
+              style={{ width: `${leftW}%` }}
             />
             <div 
-              className="h-full bg-blue-400 transition-all duration-1000 ease-out" 
-              style={{ width: `${route.right_percent}%` }}
+              className="h-full bg-[#3B82F6] transition-all duration-1000 ease-out" 
+              style={{ width: `${rightW}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs font-bold mt-1.5">
-            <span className="text-orange-600">{route.left_percent}% Sun</span>
-            <span className="text-blue-600">{route.right_percent}% Sun</span>
+          {/* Color Legend */}
+          <div className="flex justify-between items-center mt-2 px-1">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#F5A623]"></div>
+              <span className="text-[10px] font-black uppercase tracking-tighter text-[#F5A623]">Left {Math.round(route.left_percent)}%</span>
+            </div>
+            <div className="flex-1 mx-4 h-[1px] bg-gray-100"></div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-tighter text-[#3B82F6]">{Math.round(route.right_percent)}% Right</span>
+              <div className="w-2 h-2 rounded-full bg-[#3B82F6]"></div>
+            </div>
           </div>
         </div>
 
-        <div className="pt-1">
-          <div className={`p-4 rounded-xl flex items-start gap-3 ${
-            route.recommended_side === 'LEFT' ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'
-          }`}>
-            <div className="text-xl pt-0.5">
-              {route.recommended_side === 'LEFT' ? '✅' : '⚠️'}
-            </div>
-            <p className="text-xs font-semibold text-gray-700 leading-relaxed">
-              {route.recommended_side === 'LEFT' 
-                ? "Optimal comfort on the LEFT. You'll avoid most direct sunlight during this trip." 
-                : "The sun will be primarily on the left. We recommend sitting on the RIGHT side."}
+        <div className="bg-gray-50/50 rounded-2xl p-4 space-y-2 border border-gray-100">
+          <div className="flex justify-between text-[10px] font-bold text-gray-500">
+            <span>🕐 Departs: {route.departure_time_str}</span>
+            <span>🏁 Arrives: ~{formatTime(route.arrival_time)}</span>
+          </div>
+          <p className="text-xs font-bold text-gray-700 leading-tight">
+            ☀️ {route.exposure_summary}
+          </p>
+          <p className="text-[10px] text-gray-400 font-medium leading-tight">
+            {route.recommendation_reason}
+          </p>
+        </div>
+
+        {route.worst_segment_note && (
+          <div className="bg-red-50/50 border border-red-100 rounded-2xl p-3 flex items-start gap-2">
+            <span className="text-xs">⚠️</span>
+            <p className="text-[10px] font-bold text-red-600 leading-tight">
+              {route.worst_segment_note}
             </p>
           </div>
-        </div>
+        )}
 
         <button 
           onClick={handleShare}
-          className="w-full py-3 rounded-xl border-2 border-gray-100 text-gray-500 text-xs font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-2xl bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center justify-center gap-2 border border-gray-100"
         >
-          {copied ? '✅ Copied!' : '📤 Share Result'}
+          {copied ? '✅ Copied!' : '📤 Share Results'}
         </button>
       </div>
     </div>
@@ -100,8 +129,10 @@ const RouteCard = ({ route, isBest, originAddress, destinationName }) => {
 RouteCard.propTypes = {
   route: PropTypes.object.isRequired,
   isBest: PropTypes.bool,
-  originAddress: PropTypes.string,
+  isSelected: PropTypes.bool,
+  originName: PropTypes.string,
   destinationName: PropTypes.string,
+  onClick: PropTypes.func
 };
 
 export default RouteCard;
